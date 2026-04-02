@@ -3,6 +3,7 @@ function Component() {
     if (installer.isInstaller() && systemInfo.productType === "windows") {
         component.loaded.connect(this, Component.prototype.installerLoaded);
     }
+    installer.installationFinished.connect(this, Component.prototype.installationFinished);
 }
 
 
@@ -43,6 +44,14 @@ Component.prototype.extraInstanceNameChanged = function(text) {
     widget.complete = true;
 }
 
+// IFW 4.x sometimes leaves systemInfo.pathSeparator undefined in .qs scripts; never concatenate it raw.
+function ifwPathSep() {
+    var s = systemInfo.pathSeparator;
+    if (s !== undefined && s !== null && String(s).length > 0)
+        return String(s);
+    return (systemInfo.productType === "windows") ? "\\" : "/";
+}
+
 function lastPathSegment(path) {
     var p = path;
     p = p.replace(/\\/g, "/");
@@ -79,53 +88,97 @@ function parentFolder(path) {
     if (/^[A-Za-z]:\/$/.test(p))
         return "";
 
-    return parent.replace(/\//g, systemInfo.pathSeparator);
+    return parent.replace(/\//g, ifwPathSep());
+}
+
+
+Component.prototype.installationFinished = function()
+{
+
+    try{
+        var extra = installer.value("ExtraInstanceName");
+        if (extra == null)
+            extra = "";
+        extra = String(extra).replace(/^\s+|\s+$/g, "");
+        if (extra.length === 0)
+            return;
+
+        var target = installer.value("TargetDir");
+        var parentPath = target.replace(/[\/\\][^\/\\]+$/, "");
+        console.log("parentPath = "+ parentPath);
+        if (parentPath.length === 0)
+            return;
+
+        var sep = ifwPathSep();
+        // Avoid paths like "D:\\Foo" when parentPath already ends with "\".
+        var normalizedParent = String(parentPath);
+        while (normalizedParent.length > 0 &&
+               normalizedParent.charAt(normalizedParent.length - 1) === sep &&
+               normalizedParent.length > 3 /* keep "D:\" */) {
+            normalizedParent = normalizedParent.substring(0, normalizedParent.length - 1);
+        }
+
+        // Trim trailing separators from target as well (except drive root).
+        var normalizedTarget = String(target);
+        while (normalizedTarget.length > 0 &&
+               normalizedTarget.charAt(normalizedTarget.length - 1) === sep &&
+               normalizedTarget.length > 3 /* keep "D:\" */) {
+            normalizedTarget = normalizedTarget.substring(0, normalizedTarget.length - 1);
+        }
+
+        var dest = (normalizedParent.charAt(normalizedParent.length - 1) === sep)
+                ? (normalizedParent + extra)
+                : (normalizedParent + sep + extra);
+
+        // IFW will fail CopyDirectory if either side resolves to a drive root like "D:\".
+        var driveRootRe = /^[A-Za-z]:\\$/;
+        if (driveRootRe.test(normalizedTarget) || driveRootRe.test(dest)) {
+            console.log("Skipping CopyDirectory due to drive-root path. source=" + normalizedTarget + " dest=" + dest);
+            return;
+        }
+
+        console.log("CopyDirectory source=" + normalizedTarget + " dest=" + dest);
+        installer.performOperation("CopyDirectory",[normalizedTarget,dest])
+    }
+    catch (e) {
+        print(e);
+        console.log("Error in osCopyDirectory: ");
+    }
 }
 
 Component.prototype.createOperations = function()
 {
-    component.createOperations();
+    try {
+        component.createOperations();
 
-    var extra = installer.value("ExtraInstanceName");
-    if (extra == null)
-        extra = "";
-    extra = String(extra).replace(/^\s+|\s+$/g, "");
-    if (extra.length === 0)
-        return;
+        // -------- Windows --------
+        if (systemInfo.productType === "windows") {
+            component.addOperation("CreateShortcut",
+                                   "@TargetDir@/TestProj.exe",// target
+                                   "@DesktopDir@/TestProj.lnk",// link-path
+                                   "workingDirectory=@TargetDir@",// working-dir
+                                   "iconPath=@TargetDir@/TestProj.exe", "iconId=0",// icon
+                                   "description=Start App");// description
+            console.log("Windows ");
+        }
 
-    var target = installer.value("TargetDir");
-    var parentPath = parentFolder(target);
-    if (parentPath.length === 0)
-        return;
+        // -------- Linux / Raspberry Pi (.desktop) --------
+        if (systemInfo.productType === "linux") {
 
-    var sep = systemInfo.pathSeparator;
-    // Avoid paths like "D:\\Foo" when parentPath already ends with "\".
-    var normalizedParent = String(parentPath);
-    while (normalizedParent.length > 0 &&
-           normalizedParent.charAt(normalizedParent.length - 1) === sep &&
-           normalizedParent.length > 3 /* keep "D:\" */) {
-        normalizedParent = normalizedParent.substring(0, normalizedParent.length - 1);
+            component.addOperation(
+                          "CreateDesktopEntry",
+                          "TestProj.desktop",
+                          "Type=Application",
+                          "Name=TestProj",
+                          "Exec=@TargetDir@/TestProj",
+                          "Icon=@TargetDir@/icon.png",
+                          "Terminal=false",
+                          "Categories=Utility;"
+                          );
+        }
+
     }
-
-    // Trim trailing separators from target as well (except drive root).
-    var normalizedTarget = String(target);
-    while (normalizedTarget.length > 0 &&
-           normalizedTarget.charAt(normalizedTarget.length - 1) === sep &&
-           normalizedTarget.length > 3 /* keep "D:\" */) {
-        normalizedTarget = normalizedTarget.substring(0, normalizedTarget.length - 1);
+    catch (e) {
+        print(e);
     }
-
-    var dest = (normalizedParent.charAt(normalizedParent.length - 1) === sep)
-        ? (normalizedParent + extra)
-        : (normalizedParent + sep + extra);
-
-    // IFW will fail CopyDirectory if either side resolves to a drive root like "D:\".
-    var driveRootRe = /^[A-Za-z]:\\$/;
-    if (driveRootRe.test(normalizedTarget) || driveRootRe.test(dest)) {
-        console.log("Skipping CopyDirectory due to drive-root path. source=" + normalizedTarget + " dest=" + dest);
-        return;
-    }
-
-    console.log("CopyDirectory source=" + normalizedTarget + " dest=" + dest);
-    component.addOperation("CopyDirectory", normalizedTarget, dest);
 }

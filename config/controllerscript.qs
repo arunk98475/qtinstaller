@@ -3,6 +3,7 @@
 function Controller()
 {
     installer.uninstallationStarted.connect(this, Controller.prototype.onUninstallationStarted);
+
 }
 
 Controller.prototype.onUninstallationStarted = function()
