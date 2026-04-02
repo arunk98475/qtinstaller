@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+  <Name>KTS InfoMate Player</Name>
+  <Version>5.0.0.0</Version>
+  <Title>KTS InfoMate Player</Title>
+  <Publisher>KTS Infotech</Publisher>
+  <StartMenuDir>KTS Infotech\Infomate</StartMenuDir>
+  <TargetDir>@ApplicationsDirX64@/KTS Infotech/Infomate/default</TargetDir>
+  <WizardStyle>Modern</WizardStyle>
+</Installer>
+

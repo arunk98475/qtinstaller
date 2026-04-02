@@ -1,0 +1,21 @@
+End User License Agreement for  KTS Infomate  Software 
+
+
+GRANT OF LICENSE. 
+
+KTS InfoTech grants you the right to use one copy of the software program and documentation on a single computer. If you are using the evaluation version, you are allowed to use the product for the purpose of evaluating the product only.
+
+COPYRIGHT.
+
+KTS Infomate software program and documentations are owned by KTS InfoTech and are protected by copyright laws and international treaty provisions. Therefore, you must treat this product like any other copyrighted material.
+
+
+OTHER RESTRICTIONS.
+
+You should not reverse engineer, decompile, disassemble, or modify KTS Infomate software. This license is non-transferable.
+
+KTS InfoTech or Project Partner or Authorized Distributor makes no warranty of any kind with regard to the merchantability, performances and fitness of the software for a particular purpose. KTS InfoTech or Authorized Distributor shall not be liable for errors or for incidental or consequential damages in connection with the performance, or use of the software. You shall remain solely responsible for, and hold KTS InfoTech or Authorized Distributor harmless from all claims, liability and damages arising from the use of KTS Infomate software. Use the documents and software at your own risk.
+
+All disputes arises by the use of KTS Infomate software, including but not limited to Distribution and Customer Care, will  solely be dealt under the jurisdiction of the High court of Kerala, Ernakulam.
+
+

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+  <DisplayName>KTS InfoMate Player</DisplayName>
+  <Description>KTS InfoMate Player and dependencies</Description>
+  <Version>5.0.0.0</Version>
+  <ReleaseDate>2026-03-31</ReleaseDate>
+  <Default>true</Default>
+  <Essential>true</Essential>
+  <Licenses>
+    <License name="License Agreement" file="license.txt"/>
+  </Licenses>
+  <UserInterfaces>
+    <UserInterface>additionalinstancewidget.ui</UserInterface>
+  </UserInterfaces>
+  <Script>installscript.qs</Script>
+</Package>
+
