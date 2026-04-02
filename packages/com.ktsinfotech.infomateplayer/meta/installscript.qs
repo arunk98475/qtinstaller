@@ -1,8 +1,10 @@
+
 function Component() {
     if (installer.isInstaller() && systemInfo.productType === "windows") {
         component.loaded.connect(this, Component.prototype.installerLoaded);
     }
 }
+
 
 Component.prototype.installerLoaded = function() {
     // Page after target directory, before component selection (same idea as Inno wpSelectDir page).
@@ -80,26 +82,9 @@ function parentFolder(path) {
     return parent.replace(/\//g, systemInfo.pathSeparator);
 }
 
-Component.prototype.createOperations = function() {
+Component.prototype.createOperations = function()
+{
     component.createOperations();
-
-    var redist = "@TargetDir@\\ThirdParty\\VC_redist.x64.exe";
-    if (installer.fileExists(redist)) {
-        component.addOperation("Execute", redist, "/install /quiet /norestart");
-    }
-
-    var settingsExe = "@TargetDir@\\InfomateSettings.exe";
-    if (installer.fileExists(settingsExe)) {
-        component.addOperation("CreateShortcut",
-            settingsExe,
-            "@StartMenuDir@\\Infomate Settings.lnk",
-            "workingDirectory=@TargetDir@");
-
-        component.addOperation("CreateShortcut",
-            settingsExe,
-            "@DesktopDir@\\Infomate Settings.lnk",
-            "workingDirectory=@TargetDir@");
-    }
 
     var extra = installer.value("ExtraInstanceName");
     if (extra == null)
@@ -114,7 +99,33 @@ Component.prototype.createOperations = function() {
         return;
 
     var sep = systemInfo.pathSeparator;
-    var dest = parentPath + sep + extra;
+    // Avoid paths like "D:\\Foo" when parentPath already ends with "\".
+    var normalizedParent = String(parentPath);
+    while (normalizedParent.length > 0 &&
+           normalizedParent.charAt(normalizedParent.length - 1) === sep &&
+           normalizedParent.length > 3 /* keep "D:\" */) {
+        normalizedParent = normalizedParent.substring(0, normalizedParent.length - 1);
+    }
 
-    component.addOperation("CopyDirectory", target, dest);
+    // Trim trailing separators from target as well (except drive root).
+    var normalizedTarget = String(target);
+    while (normalizedTarget.length > 0 &&
+           normalizedTarget.charAt(normalizedTarget.length - 1) === sep &&
+           normalizedTarget.length > 3 /* keep "D:\" */) {
+        normalizedTarget = normalizedTarget.substring(0, normalizedTarget.length - 1);
+    }
+
+    var dest = (normalizedParent.charAt(normalizedParent.length - 1) === sep)
+        ? (normalizedParent + extra)
+        : (normalizedParent + sep + extra);
+
+    // IFW will fail CopyDirectory if either side resolves to a drive root like "D:\".
+    var driveRootRe = /^[A-Za-z]:\\$/;
+    if (driveRootRe.test(normalizedTarget) || driveRootRe.test(dest)) {
+        console.log("Skipping CopyDirectory due to drive-root path. source=" + normalizedTarget + " dest=" + dest);
+        return;
+    }
+
+    console.log("CopyDirectory source=" + normalizedTarget + " dest=" + dest);
+    component.addOperation("CopyDirectory", normalizedTarget, dest);
 }

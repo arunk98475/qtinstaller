@@ -7,5 +7,6 @@
   <StartMenuDir>KTS Infotech\Infomate</StartMenuDir>
   <TargetDir>@ApplicationsDirX64@/KTS Infotech/Infomate/default</TargetDir>
   <WizardStyle>Modern</WizardStyle>
+  <ControlScript>controllerscript.qs</ControlScript>
 </Installer>
 

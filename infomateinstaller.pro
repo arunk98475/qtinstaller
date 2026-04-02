@@ -18,6 +18,7 @@ FORMS += \
     packages/com.ktsinfotech.infomateplayer/meta/additionalinstancewidget.ui
 
 DISTFILES += \
+    config/controllerscript.qs \
     config/license.txt \
     packages/com.ktsinfotech.infomateplayer/data/TestProj.exe \
     packages/com.ktsinfotech.infomateplayer/meta/installscript.qs \
