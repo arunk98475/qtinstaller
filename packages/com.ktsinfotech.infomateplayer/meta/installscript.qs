@@ -3,7 +3,6 @@ function Component() {
     if (installer.isInstaller() && systemInfo.productType === "windows") {
         component.loaded.connect(this, Component.prototype.installerLoaded);
     }
-    installer.installationFinished.connect(this, Component.prototype.installationFinished);
 }
 
 
@@ -91,94 +90,86 @@ function parentFolder(path) {
     return parent.replace(/\//g, ifwPathSep());
 }
 
-
-Component.prototype.installationFinished = function()
+Component.prototype.createOperationsForArchive = function(archive)
 {
-
-    try{
-        var extra = installer.value("ExtraInstanceName");
-        if (extra == null)
-            extra = "";
-        extra = String(extra).replace(/^\s+|\s+$/g, "");
-        if (extra.length === 0)
-            return;
-
+    try
+    {
         var target = installer.value("TargetDir");
-        var parentPath = target.replace(/[\/\\][^\/\\]+$/, "");
-        console.log("parentPath = "+ parentPath);
-        if (parentPath.length === 0)
+
+        var defaultDir = target + "/default";
+        component.addOperation("Extract", archive, defaultDir);
+
+        var extra = installer.value("ExtraInstanceName");
+        if (!extra || extra.length === 0)
             return;
 
-        var sep = ifwPathSep();
-        // Avoid paths like "D:\\Foo" when parentPath already ends with "\".
-        var normalizedParent = String(parentPath);
-        while (normalizedParent.length > 0 &&
-               normalizedParent.charAt(normalizedParent.length - 1) === sep &&
-               normalizedParent.length > 3 /* keep "D:\" */) {
-            normalizedParent = normalizedParent.substring(0, normalizedParent.length - 1);
-        }
-
-        // Trim trailing separators from target as well (except drive root).
-        var normalizedTarget = String(target);
-        while (normalizedTarget.length > 0 &&
-               normalizedTarget.charAt(normalizedTarget.length - 1) === sep &&
-               normalizedTarget.length > 3 /* keep "D:\" */) {
-            normalizedTarget = normalizedTarget.substring(0, normalizedTarget.length - 1);
-        }
-
-        var dest = (normalizedParent.charAt(normalizedParent.length - 1) === sep)
-                ? (normalizedParent + extra)
-                : (normalizedParent + sep + extra);
-
-        // IFW will fail CopyDirectory if either side resolves to a drive root like "D:\".
-        var driveRootRe = /^[A-Za-z]:\\$/;
-        if (driveRootRe.test(normalizedTarget) || driveRootRe.test(dest)) {
-            console.log("Skipping CopyDirectory due to drive-root path. source=" + normalizedTarget + " dest=" + dest);
-            return;
-        }
-
-        console.log("CopyDirectory source=" + normalizedTarget + " dest=" + dest);
-        installer.performOperation("CopyDirectory",[normalizedTarget,dest])
+        var additionalInstanceDir = target + "/" + extra;
+        component.addOperation("Extract", archive, additionalInstanceDir);
     }
-    catch (e) {
-        print(e);
-        console.log("Error in osCopyDirectory: ");
+    catch (e)
+    {
+        print("Error in createOperationsForArchive: " + e);
     }
+};
+
+function createWinShortcut(folderName, executableName)
+{
+    component.addOperation("CreateShortcut",
+        "@TargetDir@/" + folderName + "/" + executableName+".exe",
+        "@DesktopDir@/"+executableName+"_"+folderName+".lnk",
+        "workingDirectory=@TargetDir@/" + folderName,
+        "iconPath=@TargetDir@/" + folderName + "/" + executableName+".exe",
+        "iconId=0",
+        "description=Start App"
+    );
+
+    print("Windows shortcut created for " + folderName);
+}
+
+
+function createLinuxShortcut(folderName, executableName)
+{
+    component.addOperation("CreateDesktopEntry",
+        executableName+"_" + folderName + ".desktop",
+        "Type=Application",
+        "Name=TestProj",
+        "Exec=@TargetDir@/" + folderName + "/" + executableName,
+        "Icon=@TargetDir@/" + folderName + "/" + executableName,
+        "Terminal=false",
+        "Categories=Utility;"
+    );
+
+    print("Linux shortcut created for " + folderName);
 }
 
 Component.prototype.createOperations = function()
 {
-    try {
+    try
+    {
         component.createOperations();
 
-        // -------- Windows --------
-        if (systemInfo.productType === "windows") {
-            component.addOperation("CreateShortcut",
-                                   "@TargetDir@/TestProj.exe",// target
-                                   "@DesktopDir@/TestProj.lnk",// link-path
-                                   "workingDirectory=@TargetDir@",// working-dir
-                                   "iconPath=@TargetDir@/TestProj.exe", "iconId=0",// icon
-                                   "description=Start App");// description
-            console.log("Windows ");
+        var executableName = "TestProj";
+
+        // ----- Default instance -----
+        if (systemInfo.productType === "windows")
+            createWinShortcut("default", executableName);
+
+        if (systemInfo.productType === "opensuse")
+            createLinuxShortcut("default", executableName);
+
+        // ----- Extra instance -----
+        var extra = installer.value("ExtraInstanceName");
+        if (extra && extra.length > 0)
+        {
+            if (systemInfo.productType === "windows")
+                createWinShortcut(extra, executableName);
+
+            if (systemInfo.productType === "opensuse")
+                createLinuxShortcut(extra, executableName);
         }
-
-        // -------- Linux / Raspberry Pi (.desktop) --------
-        if (systemInfo.productType === "linux") {
-
-            component.addOperation(
-                          "CreateDesktopEntry",
-                          "TestProj.desktop",
-                          "Type=Application",
-                          "Name=TestProj",
-                          "Exec=@TargetDir@/TestProj",
-                          "Icon=@TargetDir@/icon.png",
-                          "Terminal=false",
-                          "Categories=Utility;"
-                          );
-        }
-
     }
-    catch (e) {
+    catch (e)
+    {
         print(e);
     }
-}
+};

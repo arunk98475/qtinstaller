@@ -5,7 +5,7 @@
   <Title>KTS InfoMate Player</Title>
   <Publisher>KTS Infotech</Publisher>
   <StartMenuDir>KTS Infotech\Infomate</StartMenuDir>
-  <TargetDir>@ApplicationsDirX64@/KTS Infotech/Infomate/default</TargetDir>
+  <TargetDir>@ApplicationsDirX64@/KTS Infotech/Infomate</TargetDir>
   <WizardStyle>Modern</WizardStyle>
   <ControlScript>controllerscript.qs</ControlScript>
 </Installer>

@@ -8,42 +8,60 @@ function Controller()
 
 Controller.prototype.onUninstallationStarted = function()
 {
-    console.log("In controller onUninstallationStarted.");
+    var executableName = "TestProj.exe";
+    print("In controller onUninstallationStarted");
 
     try
     {
-        if (installer.isUninstaller())
+        var root = installer.value("TargetDir");
+        if (!root)
         {
-            var root = installer.value("TargetDir");
-            if (!root)
-                root = installer.value("InstallDir");
-            if (!root)
-                root = installer.value("ProductDir");
+            print("TargetDir not found");
+            return;
+        }
 
-            if (!root) {
-                console.log("No root dir found!");
-                return;
-            }
+        // ---- Run for default instance ----
+        var exePath = root + "/default/" + executableName;
+        runUninstallCommand(exePath);
 
-            // Go one directory up
-            var parentDir = root.replace(/[\/\\][^\/\\]+$/, "");
-            console.log("parentDir: " + parentDir);
-
-            var exePath = parentDir + "/default/TestProj";
-
-            console.log("Running: " + exePath + " -u");
-
-            // Make sure executable permission exists
-            //installer.execute("chmod", ["+x", exePath]);
-
-            // Execute your app with -u
-            var result = installer.execute(exePath, ["-u"]);
-
-            console.log("Result: " + result);
+        // ---- Run for extra instance if exists ----
+        var extra = installer.value("ExtraInstanceName");
+        if (extra && extra.length > 0)
+        {
+            exePath = root + "/" + extra + "/" + executableName;
+            runUninstallCommand(exePath);
         }
     }
     catch (e)
     {
-        console.log("Error: " + e);
+        print("Error in onUninstallationStarted: " + e);
+    }
+};
+
+
+function runUninstallCommand(exePath)
+{
+    try
+    {
+        if (!installer.fileExists(exePath))
+        {
+            print("Executable not found: " + exePath);
+            return;
+        }
+
+        // ---- Make executable on Linux ----
+        if (systemInfo.productType === "opensuse")
+        {
+            print("Running chmod +x on: " + exePath);
+            installer.execute("chmod", ["+x", exePath]);
+        }
+
+        print("Running: " + exePath + " -u");
+        var result = installer.execute(exePath, ["-u"]);
+        print("Result: " + result);
+    }
+    catch (e)
+    {
+        print("Failed to run: " + exePath + " Error: " + e);
     }
 }
