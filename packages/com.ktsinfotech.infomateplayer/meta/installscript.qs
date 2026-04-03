@@ -115,10 +115,10 @@ Component.prototype.createOperationsForArchive = function(archive)
 function createWinShortcut(folderName, executableName)
 {
     component.addOperation("CreateShortcut",
-        "@TargetDir@/" + folderName + "/" + executableName+".exe",
+        "@TargetDir@/" + folderName + "/bin/" + executableName+".exe",
         "@DesktopDir@/"+executableName+"_"+folderName+".lnk",
         "workingDirectory=@TargetDir@/" + folderName,
-        "iconPath=@TargetDir@/" + folderName + "/" + executableName+".exe",
+        "iconPath=@TargetDir@/" + folderName + "/bin/" + executableName+".exe",
         "iconId=0",
         "description=Start App"
     );
@@ -133,8 +133,8 @@ function createLinuxShortcut(folderName, executableName)
         executableName+"_" + folderName + ".desktop",
         "Type=Application",
         "Name=TestProj",
-        "Exec=@TargetDir@/" + folderName + "/" + executableName,
-        "Icon=@TargetDir@/" + folderName + "/" + executableName,
+        "Exec=@TargetDir@/" + folderName + "/bin/" + executableName,
+        "Icon=@TargetDir@/" + folderName + "/bin/" + executableName,
         "Terminal=false",
         "Categories=Utility;"
     );
@@ -148,7 +148,7 @@ Component.prototype.createOperations = function()
     {
         component.createOperations();
 
-        var executableName = "TestProj";
+        var executableName = "InfomateSettings";
 
         // ----- Default instance -----
         if (systemInfo.productType === "windows")

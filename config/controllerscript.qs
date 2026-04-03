@@ -8,7 +8,7 @@ function Controller()
 
 Controller.prototype.onUninstallationStarted = function()
 {
-    var executableName = "TestProj.exe";
+    var executableName = "InfomateSettings";
     print("In controller onUninstallationStarted");
 
     try
@@ -21,14 +21,14 @@ Controller.prototype.onUninstallationStarted = function()
         }
 
         // ---- Run for default instance ----
-        var exePath = root + "/default/" + executableName;
+        var exePath = root + "/default/bin/" + executableName;
         runUninstallCommand(exePath);
 
         // ---- Run for extra instance if exists ----
         var extra = installer.value("ExtraInstanceName");
         if (extra && extra.length > 0)
         {
-            exePath = root + "/" + extra + "/" + executableName;
+            exePath = root + "/" + extra + "/bin/" + executableName;
             runUninstallCommand(exePath);
         }
     }
@@ -43,6 +43,10 @@ function runUninstallCommand(exePath)
 {
     try
     {
+        if (systemInfo.productType === "windows")
+        {
+            exePath+=".exe";
+        }
         if (!installer.fileExists(exePath))
         {
             print("Executable not found: " + exePath);
